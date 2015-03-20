@@ -18,7 +18,6 @@
   ],
   "main": "lib/oauth2server.js",
   "dependencies": {
-    "node-oauth2-server-restify": "git+https://github.com/marsanla/node-oauth2-server-restify.git",
     "basic-auth": "~0.0.1",
     "node-restify-errors": "~0.1.0"
   },
