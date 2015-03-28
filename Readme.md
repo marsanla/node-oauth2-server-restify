@@ -55,7 +55,7 @@ Note: As no model was actually implemented here, delving any deeper, i.e. passin
  - grant types you wish to support, currently the module supports `password` and `refresh_token`
   - Default: `[]`
 - *function|boolean* **debug**
- - If `true` errors will be  logged to console. You may also pass a custom function, in which case that function will be called with the error as it's first argument
+ - If `true` errors will be  logged to console. You may also pass a custom function, in which case that function will be called with the error as its first argument
   - Default: `false`
 - *number* **accessTokenLifetime**
  - Life of access tokens in seconds
@@ -69,8 +69,8 @@ Note: As no model was actually implemented here, delving any deeper, i.e. passin
  - Life of auth codes in seconds
   - Default: `30`
 - *regexp* **clientIdRegex**
- - Regex to match auth codes against before checking model
- - Default: `/^[a-z0-9-_]{3,40}$/i`
+ - Regex to sanity check client id against before checking model. Note: the default just matches common `client_id` structures, change as needed 
+  - Default: `/^[a-z0-9-_]{3,40}$/i`
 - *boolean* **passthroughErrors**
  - If true, **non grant** errors will not be handled internally (so you can ensure a consistent format with the rest of your api)
 - *boolean* **continueAfterResponse**
@@ -97,8 +97,9 @@ Note: see https://github.com/thomseddon/node-oauth2-server/tree/master/examples/
          - *date* **expires**
              - The date when it expires
              - `null` to indicate the token **never expires**
-         - *string|number* **userId**
-             - The user id (saved in req.user.id)
+         - *mixed* **user** *or* *string|number* **userId**
+             - If a `user` key exists, this is saved as `req.user`
+             - Otherwise a `userId` key must exist, which is saved in `req.user.id`
 
 #### getClient (clientId, clientSecret, callback)
 - *string* **clientId**
@@ -112,6 +113,7 @@ Note: see https://github.com/thomseddon/node-oauth2-server/tree/master/examples/
      - Saved in `req.client`
      - Must contain the following keys:
          - *string* **clientId**
+         - *string* **redirectUri** (`authorization_code` grant type only)
 
 #### grantTypeAllowed (clientId, grantType, callback)
 - *string* **clientId**
@@ -247,9 +249,11 @@ The spec does not actually require that you revoke the old token - hence this is
 
 ### Optional
 
-#### generateToken (type, callback)
+#### generateToken (type, req, callback)
 - *string* **type**
  - `accessToken` or `refreshToken`
+- *object* **req**
+ - The current express request
 - *function* **callback (error, token)**
  - *mixed* **error**
      - Truthy to indicate an error
@@ -262,7 +266,7 @@ The spec does not actually require that you revoke the old token - hence this is
 
 ## Extension Grants
 You can support extension/custom grants by implementing the extendedGrant method as outlined above.
-Any requests that begin with http(s):// (as [defined in the spec](http://tools.ietf.org/html/rfc6749#section-4.5)) will be passed to it for you to handle.
+Any grant type that is a valid URI will be passed to it for you to handle (as [defined in the spec](http://tools.ietf.org/html/rfc6749#section-4.5)).
 You can access the grant type via the first argument and you should pass back supported as `false` if you do not support it to ensure a consistent (and compliant) response.
 
 ## Example using the `password` grant type
