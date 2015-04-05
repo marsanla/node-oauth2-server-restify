@@ -252,6 +252,40 @@ describe('Grant', function() {
 
     });
 
+    it('should include client and user in request', function (done) {
+      var app = bootstrap({
+        model: {
+          getClient: function (id, secret, callback) {
+            callback(false, { clientId: 'thom', clientSecret: 'nightworld' });
+          },
+          grantTypeAllowed: function (clientId, grantType, callback) {
+            callback(false, true);
+          },
+          getUser: function (uname, pword, callback) {
+            callback(false, { id: 1 });
+          },
+          generateToken: function (type, req, callback) {
+            req.oauth.client.clientId.should.equal('thom');
+            req.oauth.client.clientSecret.should.equal('nightworld');
+            req.user.id.should.equal(1);
+            callback(false, 'thommy');
+          },
+          saveAccessToken: function (token, clientId, expires, user, cb) {
+            token.should.equal('thommy');
+            cb();
+          }
+        },
+        grants: ['password']
+      });
+
+      request(app)
+        .post('/oauth/token')
+        .set('Content-Type', 'application/x-www-form-urlencoded')
+        .send(validBody)
+        .expect(200, /thommy/, done);
+
+    });
+
     it('should reissue if model returns object', function (done) {
       var app = bootstrap({
         model: {
@@ -377,6 +411,8 @@ describe('Grant', function() {
         .set('Content-Type', 'application/x-www-form-urlencoded')
         .send(validBody)
         .expect(200)
+        .expect('Cache-Control', 'no-store')
+        .expect('Pragma', 'no-cache')
         .end(function (err, res) {
           if (err) return done(err);
 
@@ -418,6 +454,8 @@ describe('Grant', function() {
         .set('Content-Type', 'application/x-www-form-urlencoded')
         .send(validBody)
         .expect(200)
+        .expect('Cache-Control', 'no-store')
+        .expect('Pragma', 'no-cache')
         .end(function (err, res) {
           if (err) return done(err);
 
